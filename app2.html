@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Futures Trading Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.0/cdn.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <!-- CDN Links -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'crypto-blue': '#3b82f6',
+            'crypto-purple': '#8b5cf6',
+            'crypto-dark': '#0f172a',
+            'crypto-card': '#1e293b',
+            'crypto-card-dark': '#0f172a',
+            'crypto-profit': '#10b981',
+            'crypto-loss': '#ef4444',
+          },
+          fontFamily: {
+            'orbitron': ['Orbitron', 'sans-serif'],
+          },
+          boxShadow: {
+            'glow': '0 0 15px rgba(59, 130, 246, 0.4)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .phase-progress-bar, .fade-in {
+      transition: all 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-animation {
+      animation: fadeIn 0.3s;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-200 antialiased font-orbitron">
+  <div class="max-w-7xl mx-auto px-4 py-6" x-data="tradingTracker()" x-init="initApp()">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-slate-700 pb-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-crypto-blue mb-4 md:mb-0" style="text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);">Crypto Futures Trading Tracker</h1>
+      <div class="flex flex-wrap gap-2">
+        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showAnalytics = true">Analytics</button>
+        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showHistory = true">History</button>
+        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showSettings = true">Settings</button>
+      </div>
+    </div>
+
+    <!-- Phases Progress -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <template x-for="(phase, index) in phases" :key="index">
+        <div class="bg-crypto-card rounded-lg p-4 shadow-lg border border-slate-700"
+             :class="{ 'border-crypto-blue shadow-glow': currentPhase === index + 1 }">
+          <div class="text-lg font-bold mb-2 text-crypto-blue" x-text="`Phase ${index + 1}: $${phase.startBalance.toFixed(0)} → $${phase.endBalance.toFixed(0)}`"></div>
+          <div class="text-sm" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
+          <div class="bg-slate-700 rounded-full h-3 mt-3 overflow-hidden">
+            <div class="bg-gradient-to-r from-crypto-blue to-crypto-purple h-full rounded-full" :style="`width: ${calculatePhaseProgress(index + 1)}%`"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Trade Entry Panel -->
+      <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
+        <h2 class="text-xl font-bold mb-4 text-crypto-blue border-b border-slate-700 pb-2">Current Task: <span x-text="`${currentPhase}.${currentTask}`"></span></h2>
+        <p class="my-2">Current Balance: <span class="font-medium" x-text="`$${currentBalance.toFixed(2)}`"></span></p>
+        <p class="my-2">Profit Target: <span class="font-medium" x-text="`$${getCurrentProfitTarget().toFixed(2)}`"></span></p>
+        <p class="my-2">Remaining to Target: <span class="font-medium" x-text="`$${(getCurrentProfitTarget() - currentTaskProfit).toFixed(2)}`"></span></p>
+        
+        <div class="bg-slate-800 rounded-lg p-4 mt-4">
+          <h3 class="text-lg font-bold mb-2 text-crypto-blue">Task Status</h3>
+          <p class="my-1">Current Phase: <span class="font-medium" x-text="currentPhase"></span></p>
+          <p class="my-1">Current Task: <span class="font-medium" x-text="currentTask"></span></p>
+          <p class="my-1">Task Profit: <span class="font-medium" x-text="`$${currentTaskProfit.toFixed(2)}`"></span></p>
+          <p class="my-1">Progress: <span class="font-medium" x-text="`${(currentTaskProfit / getCurrentProfitTarget() * 100).toFixed(0)}%`"></span></p>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-lg font-bold mb-3 text-crypto-blue">Enter New Trade Result</h3>
+          <input type="number" x-model.number="tradeAmount" placeholder="Profit/Loss amount" step="0.01"
+                 class="bg-slate-800 border border-slate-600 rounded-md px-4 py-2 w-full text-white mb-3 focus:outline-none focus:ring-2 focus:ring-crypto-blue">
+          <div>
+            <button class="bg-crypto-profit hover:bg-green-700 text-white px-6 py-2 rounded-md transition duration-200 font-bold" @click="addTrade()">Add Trade</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Panel -->
+      <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
+        <h2 class="text-xl font-bold mb-2 text-crypto-blue border-b border-slate-700 pb-2">Trading Statistics</h2>
+        <div class="flex flex-wrap gap-3 mt-4">
+          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Overall</h3>
+            <p class="my-1">Total Profit: <span class="font-medium" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
+            <p class="my-1">Total Trades: <span class="font-medium" x-text="totalTrades"></span></p>
+            <p class="my-1">Win Rate: <span class="font-medium" x-text="`${calculateWinRate()}%`"></span></p>
+          </div>
+          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Phase</h3>
+            <p class="my-1">Completed Tasks: <span class="font-medium" x-text="phases[currentPhase-1].completedTasks"></span>/<span x-text="phases[currentPhase-1].totalTasks"></span></p>
+            <p class="my-1">Phase Progress: <span class="font-medium" x-text="`${calculatePhaseProgress(currentPhase)}%`"></span></p>
+          </div>
+          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Task</h3>
+            <p class="my-1">Trades in Task: <span class="font-medium" x-text="getCurrentTaskTrades().length"></span></p>
+            <p class="my-1">Average Trade: <span class="font-medium" x-text="`$${calculateAverageTradeForTask().toFixed(2)}`"></span></p>
+          </div>
+        </div>
+        
+        <div class="mt-6 bg-slate-800 p-4 rounded-lg shadow-inner h-[250px]">
+          <div id="balanceChart" class="h-full"></div>
+        </div>
+        
+        <h3 class="text-lg font-bold mt-6 mb-2 text-crypto-blue">Recent Trades</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tl-md">Task</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Amount</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Balance After</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tr-md">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(trade, index) in getRecentTrades(5)" :key="index">
+                <tr>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="`${trade.phase}.${trade.task}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" 
+                      :class="trade.amount >= 0 ? 'text-crypto-profit' : 'text-crypto-loss'"
+                      x-text="`$${trade.amount.toFixed(2)}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="`$${trade.balanceAfter.toFixed(2)}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="new Date(trade.timestamp).toLocaleString()"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm" :style="showAnalytics ? 'display: flex' : 'display: none'">
+      <div class="bg-crypto-card rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-700 modal-animation mx-4">
+        <span class="float-right text-3xl leading-none cursor-pointer text-slate-400 hover:text-white" @click="showAnalytics = false">&times;</span>
+        <h2 class="text-xl font-bold mb-4 text-crypto-blue">Analytics</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div class="bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Performance Metrics</h3>
+            <p class="my-1">Starting Capital: $100.00</p>
+            <p class="my-1">Current Balance: <span class="font-medium" x-text="`$${currentBalance.toFixed(2)}`"></span></p>
+            <p class="my-1">Total Profit: <span class="font-medium" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
+            <p class="my-1">Return: <span class="font-medium" x-text="`${((currentBalance / 100 - 1) * 100).toFixed(2)}%`"></span></p>
+          </div>
+          <div class="bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Trade Statistics</h3>
+            <p class="my-1">Total Trades: <span class="font-medium" x-text="totalTrades"></span></p>
+            <p class="my-1">Winning Trades: <span class="font-medium" x-text="winningTrades"></span></p>
+            <p class="my-1">Losing Trades: <span class="font-medium" x-text="losingTrades"></span></p>
+            <p class="my-1">Win Rate: <span class="font-medium" x-text="`${calculateWinRate()}%`"></span></p>
+          </div>
+          <div class="bg-slate-800 p-4 rounded-lg">
+            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Phase Progress</h3>
+            <template x-for="(phase, index) in phases" :key="index">
+              <p class="my-1">Phase <span x-text="index+1"></span>: <span class="font-medium" x-text="`${calculatePhaseProgress(index+1)}%`"></span></p>
+            </template>
+          </div>
+        </div>
+        
+        <h3 class="text-lg font-bold mt-6 mb-2 text-crypto-blue">Task Completion Analysis</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tl-md">Phase</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Completed Tasks</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Total Tasks</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Avg. Trades per Task</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tr-md">Avg. Profit per Task</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(phase, index) in phases" :key="index">
+                <tr>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="index+1"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="phase.completedTasks"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="phase.totalTasks"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="calculateAvgTradesPerTask(index+1).toFixed(2)"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="`$${calculateAvgProfitPerTask(index+1).toFixed(2)}`"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm" :style="showHistory ? 'display: flex' : 'display: none'">
+      <div class="bg-crypto-card rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-700 modal-animation mx-4">
+        <span class="float-right text-3xl leading-none cursor-pointer text-slate-400 hover:text-white" @click="showHistory = false">&times;</span>
+        <h2 class="text-xl font-bold mb-4 text-crypto-blue">Trade History</h2>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tl-md">Task</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Amount</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm">Balance After</th>
+                <th class="bg-slate-800 text-left py-2 px-3 text-slate-300 font-bold text-sm rounded-tr-md">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(trade, index) in tradeHistory.slice().reverse()" :key="index">
+                <tr>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="`${trade.phase}.${trade.task}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" 
+                      :class="trade.amount >= 0 ? 'text-crypto-profit' : 'text-crypto-loss'"
+                      x-text="`$${trade.amount.toFixed(2)}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="`$${trade.balanceAfter.toFixed(2)}`"></td>
+                  <td class="border-t border-slate-700 py-2 px-3 text-sm" x-text="new Date(trade.timestamp).toLocaleString()"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm" :style="showSettings ? 'display: flex' : 'display: none'">
+      <div class="bg-crypto-card rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-700 modal-animation mx-4">
+        <span class="float-right text-3xl leading-none cursor-pointer text-slate-400 hover:text-white" @click="showSettings = false">&times;</span>
+        <h2 class="text-xl font-bold mb-4 text-crypto-blue">Settings</h2>
+        
+        <div>
+          <h3 class="text-lg font-bold mt-4 mb-3 text-crypto-blue">Data Management</h3>
+          <div class="flex flex-wrap gap-2">
+            <button class="bg-crypto-loss hover:bg-red-700 text-white px-4 py-2 rounded-md transition duration-200" @click="resetData()">Reset All Data</button>
+            <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="exportData()">Export Data</button>
+            <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="document.getElementById('importFile').click()">Import Data</button>
+            <input id="importFile" type="file" class="hidden" @change="importData($event)">
+          </div>
+        </div>
+        
+        <div class="mt-6">
+          <h3 class="text-lg font-bold mb-3 text-crypto-blue">Display Settings</h3>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-crypto-blue rounded border-slate-600 bg-slate-800 focus:ring-crypto-blue focus:ring-offset-slate-800" x-model="showRecentTradesOnDashboard">
+            <span>Show recent trades on dashboard</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
