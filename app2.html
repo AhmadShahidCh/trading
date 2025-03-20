@@ -18,19 +18,50 @@
       theme: {
         extend: {
           colors: {
-            'crypto-blue': '#3b82f6',
-            'crypto-purple': '#8b5cf6',
-            'crypto-dark': '#0f172a',
-            'crypto-card': '#1e293b',
-            'crypto-card-dark': '#0f172a',
-            'crypto-profit': '#10b981',
-            'crypto-loss': '#ef4444',
+            'aespa-black': '#000000',
+            'aespa-blue': '#00d8ff',
+            'aespa-purple': '#a855f7',
+            'aespa-pink': '#ff007f',
+            'aespa-green': '#22c55e', // Updated green for crypto-profit
+            'aespa-red': '#ef4444',
+            'aespa-gradient-start': '#00d8ff',
+            'aespa-gradient-end': '#a855f7',
           },
           fontFamily: {
-            'orbitron': ['Orbitron', 'sans-serif'],
+            'futuristic': ['Orbitron', 'sans-serif'],
           },
           boxShadow: {
-            'glow': '0 0 15px rgba(59, 130, 246, 0.4)',
+            'neon': '0 0 20px rgba(0, 216, 255, 0.6)',
+            'neon-intense': '0 0 30px rgba(0, 216, 255, 1)',
+          },
+          animation: {
+            'pulse-neon': 'pulseNeon 1.5s infinite',
+            'fade-slide': 'fadeSlide 0.8s ease-in-out',
+            'bounce-neon': 'bounceNeon 1.2s infinite',
+            'spin-slow': 'spinSlow 3s linear infinite',
+            'zoom-in': 'zoomIn 0.5s ease-in-out',
+          },
+          keyframes: {
+            pulseNeon: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(0, 216, 255, 0.6)' },
+              '50%': { boxShadow: '0 0 30px rgba(0, 216, 255, 1)' },
+            },
+            fadeSlide: {
+              from: { opacity: 0, transform: 'translateY(20px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+            bounceNeon: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            spinSlow: {
+              from: { transform: 'rotate(0deg)' },
+              to: { transform: 'rotate(360deg)' },
+            },
+            zoomIn: {
+              from: { transform: 'scale(0.8)', opacity: 0 },
+              to: { transform: 'scale(1)', opacity: 1 },
+            },
           },
         }
       }
@@ -48,56 +79,180 @@
     .modal-animation {
       animation: fadeIn 0.3s;
     }
+    .aespa-gradient {
+      background: linear-gradient(90deg, var(--tw-gradient-stops));
+      --tw-gradient-from: #00d8ff;
+      --tw-gradient-to: #a855f7;
+    }
+    .neon-border {
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      box-shadow: 0 0 10px rgba(0, 216, 255, 0.5);
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #00d8ff, #a855f7);
+    }
+    .hover-scale:hover {
+      transform: scale(1.05);
+      transition: transform 0.3s ease;
+    }
+    .rotate-on-hover:hover {
+      transform: rotate(10deg);
+      transition: transform 0.3s ease;
+    }
+    .glow-on-hover:hover {
+      box-shadow: 0 0 15px rgba(0, 216, 255, 0.8);
+      transition: box-shadow 0.3s ease;
+    }
+    .text-crypto-loss {
+      color: #ef4444; /* Red color for loss */
+    }
+    .text-crypto-profit {
+      color: #22c55e; /* Explicit green color for profit */
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://i.pinimg.com/originals/8a/ff/dd/8affddad20a060a5abf8d3d4d42cf114.gif') no-repeat center center;
+      background-size: 300px;
+      opacity: 0.1;
+      z-index: -1;
+      animation: danceMotion 6s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes danceMotion {
+      0% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-20px) scale(1.05);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes movePattern {
+      0% {
+        background-position: 0 0, 50px 50px;
+      }
+      100% {
+        background-position: 50px 50px, 0 0;
+      }
+    }
+    .responsive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      animation: zoomIn 1s ease-in-out forwards;
+    }
+    .loading-screen.hidden {
+      animation: fadeOut 1s ease-in-out forwards;
+    }
+    .loading-text {
+      color: #00d8ff;
+      font-size: 2rem;
+      font-family: 'Orbitron', sans-serif;
+      text-shadow: 0 0 10px #00d8ff, 0 0 20px #00d8ff;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes zoomIn {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-200 antialiased font-orbitron">
-  <div class="max-w-7xl mx-auto px-4 py-6" x-data="tradingTracker()" x-init="initApp()">
+<body class="bg-aespa-black text-slate-200 antialiased font-futuristic">
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-text">Loading...</div>
+  </div>
+  <div id="mainContent" class="max-w-7xl mx-auto px-4 py-6" x-data="tradingTracker()" x-init="initApp()" style="display: none;">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-slate-700 pb-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-crypto-blue mb-4 md:mb-0" style="text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);">Crypto Futures Trading Tracker</h1>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-aespa-blue pb-4">
+      <h1 class="text-xl md:text-2xl font-bold text-aespa-blue mb-4 md:mb-0 animate-fade-slide" style="text-shadow: 0 0 15px rgba(0, 216, 255, 0.8);">aespa Crypto Tracker</h1>
       <div class="flex flex-wrap gap-2">
-        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showAnalytics = true">Analytics</button>
-        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showHistory = true">History</button>
-        <button class="bg-crypto-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200" @click="showSettings = true">Settings</button>
+        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showAnalytics = true">Analytics</button>
+        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showHistory = true">History</button>
+        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showSettings = true">Settings</button>
       </div>
     </div>
 
     <!-- Phases Progress -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="responsive-grid mb-8">
       <template x-for="(phase, index) in phases" :key="index">
-        <div class="bg-crypto-card rounded-lg p-4 shadow-lg border border-slate-700"
-             :class="{ 'border-crypto-blue shadow-glow': currentPhase === index + 1 }">
-          <div class="text-lg font-bold mb-2 text-crypto-blue" x-text="`Phase ${index + 1}: $${phase.startBalance.toFixed(0)} → $${phase.endBalance.toFixed(0)}`"></div>
-          <div class="text-sm" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
+        <div class="bg-aespa-black rounded-lg p-4 shadow-neon border border-aespa-blue"
+             :class="{ 'border-aespa-pink shadow-neon': currentPhase === index + 1 }">
+          <div class="text-lg font-bold mb-2 text-aespa-blue" x-text="`Phase ${index + 1}: $${phase.startBalance.toFixed(0)} → $${phase.endBalance.toFixed(0)}`"></div>
+          <div class="text-sm text-aespa-pink" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
           <div class="bg-slate-700 rounded-full h-3 mt-3 overflow-hidden">
-            <div class="bg-gradient-to-r from-crypto-blue to-crypto-purple h-full rounded-full" :style="`width: ${calculatePhaseProgress(index + 1)}%`"></div>
+            <div class="progress-bar h-full rounded-full" :style="`width: ${calculatePhaseProgress(index + 1)}%`"></div>
           </div>
         </div>
       </template>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="responsive-grid gap-8">
       <!-- Trade Entry Panel -->
       <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
-        <h2 class="text-xl font-bold mb-4 text-crypto-blue border-b border-slate-700 pb-2">Current Task: <span x-text="`${currentPhase}.${currentTask}`"></span></h2>
+        <h2 class="text-lg font-bold mb-4 text-crypto-blue border-b border-slate-700 pb-2">Current Task: <span x-text="`${currentPhase}.${currentTask}`"></span></h2>
         <p class="my-2">Current Balance: <span class="font-medium" x-text="`$${currentBalance.toFixed(2)}`"></span></p>
         <p class="my-2">Profit Target: <span class="font-medium" x-text="`$${getCurrentProfitTarget().toFixed(2)}`"></span></p>
         <p class="my-2">Remaining to Target: <span class="font-medium" x-text="`$${(getCurrentProfitTarget() - currentTaskProfit).toFixed(2)}`"></span></p>
         
         <div class="bg-slate-800 rounded-lg p-4 mt-4">
           <h3 class="text-lg font-bold mb-2 text-crypto-blue">Task Status</h3>
-          <p class="my-1">Current Phase: <span class="font-medium" x-text="currentPhase"></span></p>
-          <p class="my-1">Current Task: <span class="font-medium" x-text="currentTask"></span></p>
-          <p class="my-1">Task Profit: <span class="font-medium" x-text="`$${currentTaskProfit.toFixed(2)}`"></span></p>
-          <p class="my-1">Progress: <span class="font-medium" x-text="`${(currentTaskProfit / getCurrentProfitTarget() * 100).toFixed(0)}%`"></span></p>
+          <p class="my-1"><strong>Current Phase:</strong> <span class="font-medium" x-text="currentPhase"></span></p>
+          <p class="my-1"><strong>Current Task:</strong> <span class="font-medium" x-text="currentTask"></span></p>
+          <p class="my-1"><strong>Task Profit:</strong> <span class="font-medium" x-text="`$${currentTaskProfit.toFixed(2)}`"></span></p>
+          <p class="my-1"><strong>Progress:</strong> <span class="font-medium" x-text="`${(currentTaskProfit / getCurrentProfitTarget() * 100).toFixed(1)}%`"></span></p>
         </div>
 
         <div class="mt-6">
           <h3 class="text-lg font-bold mb-3 text-crypto-blue">Enter New Trade Result</h3>
           <input type="number" x-model.number="tradeAmount" placeholder="Profit/Loss amount" step="0.01"
-                 class="bg-slate-800 border border-slate-600 rounded-md px-4 py-2 w-full text-white mb-3 focus:outline-none focus:ring-2 focus:ring-crypto-blue">
+                 class="bg-slate-800 border border-slate-600 rounded-md px-4 py-2 w-full text-white mb-3 focus:outline-none focus:ring-2 focus:ring-crypto-blue"
+                 @keyup.enter="addTrade()">
           <div>
-            <button class="bg-crypto-profit hover:bg-green-700 text-white px-6 py-2 rounded-md transition duration-200 font-bold" @click="addTrade()">Add Trade</button>
+            <button style="border: 2px solid whitesmoke;" class="bg-crypto-profit hover:bg-green-700 text-white px-6 py-2 rounded-md transition duration-200 font-bold" @click="addTrade()">Add Trade</button>
           </div>
         </div>
       </div>
@@ -105,22 +260,22 @@
       <!-- Stats Panel -->
       <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
         <h2 class="text-xl font-bold mb-2 text-crypto-blue border-b border-slate-700 pb-2">Trading Statistics</h2>
-        <div class="flex flex-wrap gap-3 mt-4">
-          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+        <div class="responsive-grid gap-3 mt-4">
+          <div class="bg-slate-800 p-4 rounded-lg">
             <h3 class="text-lg font-bold mb-2 text-crypto-blue">Overall</h3>
-            <p class="my-1">Total Profit: <span class="font-medium" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
-            <p class="my-1">Total Trades: <span class="font-medium" x-text="totalTrades"></span></p>
-            <p class="my-1">Win Rate: <span class="font-medium" x-text="`${calculateWinRate()}%`"></span></p>
+            <p class="my-1"><strong>Total Profit:</strong> <span class="font-medium" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
+            <p class="my-1"><strong>Total Trades:</strong> <span class="font-medium" x-text="totalTrades"></span></p>
+            <p class="my-1"><strong>Win Rate:</strong> <span class="font-medium" x-text="`${calculateWinRate()}%`"></span></p>
           </div>
-          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+          <div class="bg-slate-800 p-4 rounded-lg">
             <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Phase</h3>
-            <p class="my-1">Completed Tasks: <span class="font-medium" x-text="phases[currentPhase-1].completedTasks"></span>/<span x-text="phases[currentPhase-1].totalTasks"></span></p>
-            <p class="my-1">Phase Progress: <span class="font-medium" x-text="`${calculatePhaseProgress(currentPhase)}%`"></span></p>
+            <p class="my-1"><strong>Completed Tasks:</strong> <span class="font-medium" x-text="phases[currentPhase-1].completedTasks"></span>/<span x-text="phases[currentPhase-1].totalTasks"></span></p>
+            <p class="my-1"><strong>Phase Progress:</strong> <span class="font-medium" x-text="`${calculatePhaseProgress(currentPhase).toFixed(1)}%`"></span></p>
           </div>
-          <div class="flex-1 min-w-[150px] bg-slate-800 p-4 rounded-lg">
+          <div class="bg-slate-800 p-4 rounded-lg">
             <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Task</h3>
-            <p class="my-1">Trades in Task: <span class="font-medium" x-text="getCurrentTaskTrades().length"></span></p>
-            <p class="my-1">Average Trade: <span class="font-medium" x-text="`$${calculateAverageTradeForTask().toFixed(2)}`"></span></p>
+            <p class="my-1"><strong>Trades in Task:</strong> <span class="font-medium" x-text="getCurrentTaskTrades().length"></span></p>
+            <p class="my-1"><strong>Average Trade:</strong> <span class="font-medium" x-text="`$${calculateAverageTradeForTask().toFixed(2)}`"></span></p>
           </div>
         </div>
         
@@ -274,6 +429,18 @@
   </div>
 
 <script src="script.js"></script>
-
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const mainContent = document.getElementById('mainContent');
+    setTimeout(() => {
+      loadingScreen.classList.add('hidden'); // Add the hidden class for fade-out effect
+      setTimeout(() => {
+        loadingScreen.style.display = 'none'; // Ensure the loading screen is removed after animation
+        mainContent.style.display = 'block'; // Show the main content
+      }, 1000); // Match the fade-out animation duration
+    }, 3000); // 3 seconds
+  });
+</script>
 </body>
 </html>
