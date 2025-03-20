@@ -221,6 +221,23 @@
     .info-box p {
       margin: 0.5rem 0;
     }
+    .phase-card {
+      background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black */
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0, 216, 255, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .phase-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 216, 255, 0.4);
+    }
+    .button-container {
+      display: flex;
+      flex-wrap: nowrap; /* Prevent wrapping */
+      gap: 0.5rem; /* Add spacing between buttons */
+      overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
   </style>
 </head>
 <body class="bg-aespa-black text-slate-200 antialiased font-futuristic">
@@ -231,17 +248,17 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-aespa-blue pb-4">
       <h1 class="text-xl md:text-2xl font-bold text-aespa-blue mb-4 md:mb-0 animate-fade-slide" style="text-shadow: 0 0 15px rgba(0, 216, 255, 0.8);">aespa Crypto Tracker</h1>
-      <div class="flex flex-wrap gap-2">
-        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showAnalytics = true">Analytics</button>
-        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showHistory = true">History</button>
-        <button class="bg-aespa-gradient hover:bg-aespa-pink text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showSettings = true">Settings</button>
+      <div class="button-container">
+        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showAnalytics = true">Analytics</button>
+        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showHistory = true">History</button>
+        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showSettings = true">Settings</button>
       </div>
     </div>
 
     <!-- Phases Progress -->
     <div class="responsive-grid mb-8">
       <template x-for="(phase, index) in phases" :key="index">
-        <div class="bg-aespa-black rounded-lg p-4 shadow-neon border border-aespa-blue"
+        <div class="phase-card shadow-neon border border-aespa-blue"
              :class="{ 'border-aespa-purple shadow-neon': currentPhase === index + 1 }">
           <div class="text-lg font-bold mb-2 text-aespa-blue" x-text="`Phase ${index + 1}: $${phase.startBalance.toFixed(0)} → $${phase.endBalance.toFixed(0)}`"></div>
           <div class="text-sm text-aespa-purple" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
