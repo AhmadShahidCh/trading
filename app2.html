@@ -236,7 +236,20 @@
       display: flex;
       flex-wrap: nowrap; /* Prevent wrapping */
       gap: 0.5rem; /* Add spacing between buttons */
-      overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
+    .button-container button {
+      background: linear-gradient(90deg, #00d8ff, #a855f7); /* Original gradient */
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      transition: background 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 216, 255, 0.5); /* Neon shadow */
+      white-space: nowrap; /* Prevent text wrapping */
+    }
+    .button-container button:hover {
+      background: #a855f7; /* Purple on hover */
+      transform: scale(1.05); /* Slight zoom on hover */
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.8); /* Intense neon shadow */
     }
   </style>
 </head>
@@ -249,9 +262,9 @@
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-aespa-blue pb-4">
       <h1 class="text-xl md:text-2xl font-bold text-aespa-blue mb-4 md:mb-0 animate-fade-slide" style="text-shadow: 0 0 15px rgba(0, 216, 255, 0.8);">aespa Crypto Tracker</h1>
       <div class="button-container">
-        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showAnalytics = true">Analytics</button>
-        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showHistory = true">History</button>
-        <button class="bg-aespa-gradient hover:bg-aespa-purple text-white px-4 py-2 rounded-md transition duration-200 shadow-neon" @click="showSettings = true">Settings</button>
+        <button @click="showAnalytics = true">Analytics</button>
+        <button @click="showHistory = true">History</button>
+        <button @click="showSettings = true">Settings</button>
       </div>
     </div>
 
