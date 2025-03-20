@@ -38,17 +38,22 @@ updateChart(){
   bh.sort((a,b)=>a.x-b.x);
   this.chart.updateSeries([{name:'Account Balance',data:bh}]);
 },
-addTrade(){
-  if(this.tradeAmount==null||isNaN(this.tradeAmount))return;
-  this.currentBalance+=this.tradeAmount;
-  this.tradeAmount>0?this.winningTrades++:this.losingTrades++;
-  this.tradeHistory.push({phase:this.currentPhase,task:this.currentTask,amount:this.tradeAmount,
-    balanceAfter:this.currentBalance,timestamp:Date.now()});
+addTrade() {
+  if (this.tradeAmount == null || isNaN(this.tradeAmount)) return;
+  this.currentBalance += this.tradeAmount;
+  this.tradeAmount > 0 ? this.winningTrades++ : this.losingTrades++;
+  this.tradeHistory.push({
+    phase: this.currentPhase,
+    task: this.currentTask,
+    amount: this.tradeAmount,
+    balanceAfter: this.currentBalance,
+    timestamp: Date.now()
+  });
   this.totalTrades++;
-  this.currentTaskProfit+=this.tradeAmount;
-  this.tradeAmount=null;
+  this.currentTaskProfit += this.tradeAmount;
+  this.tradeAmount = null;
   this.checkTaskCompletion();
-  this.$nextTick(()=>this.updateChart());
+  this.$nextTick(() => this.updateChart());
   this.saveData();
 },
 checkTaskCompletion(){
@@ -64,9 +69,13 @@ checkTaskCompletion(){
   }
 },
 getCurrentProfitTarget(){return this.phases[this.currentPhase-1].profitTarget;},
-calculatePhaseProgress(n){
-  let p=this.phases[n-1],tw=100/p.totalTasks,tp=this.currentTaskProfit/this.phases[this.currentPhase-1].profitTarget*tw;
-  return n===this.currentPhase?Math.min(100,p.completedTasks*tw+tp):Math.min(100,(p.completedTasks/p.totalTasks)*100);
+calculatePhaseProgress(n) {
+  let p = this.phases[n - 1],
+      tw = 100 / p.totalTasks,
+      tp = (this.currentTaskProfit / this.phases[this.currentPhase - 1].profitTarget) * tw;
+  return n === this.currentPhase
+    ? Math.min(100, (p.completedTasks * tw + tp).toFixed(1))
+    : Math.min(100, ((p.completedTasks / p.totalTasks) * 100).toFixed(1));
 },
 calculateWinRate(){return this.totalTrades?((this.winningTrades/this.totalTrades)*100).toFixed(1):0;},
 getCurrentTaskTrades(){return this.tradeHistory.filter(t=>t.phase===this.currentPhase&&t.task===this.currentTask);},
