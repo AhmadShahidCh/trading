@@ -20,9 +20,9 @@
           colors: {
             'aespa-black': '#000000',
             'aespa-blue': '#00d8ff',
-            'aespa-purple': '#a855f7',
-            'aespa-pink': '#ff007f',
-            'aespa-green': '#22c55e', // Updated green for crypto-profit
+            'aespa-purple': '#a855f7', // Purple color
+            'aespa-pink': '#a855f7', // Replaced pink with purple
+            'aespa-green': '#22c55e',
             'aespa-red': '#ef4444',
             'aespa-gradient-start': '#00d8ff',
             'aespa-gradient-end': '#a855f7',
@@ -199,6 +199,28 @@
         opacity: 0.5;
       }
     }
+    .value-highlight {
+      font-weight: bold;
+      color: #00d8ff; /* Bright blue for better readability */
+      text-shadow: 0 0 5px #00d8ff;
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #f0ecf3; /* Purple for section headers */
+      text-shadow: 0 0 5px #020202;
+      margin-bottom: 0.5rem;
+    }
+    .info-box {
+      background-color: #1e293b; /* Dark slate for better contrast */
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0, 216, 255, 0.2);
+      margin-bottom: 1rem;
+    }
+    .info-box p {
+      margin: 0.5rem 0;
+    }
   </style>
 </head>
 <body class="bg-aespa-black text-slate-200 antialiased font-futuristic">
@@ -220,9 +242,9 @@
     <div class="responsive-grid mb-8">
       <template x-for="(phase, index) in phases" :key="index">
         <div class="bg-aespa-black rounded-lg p-4 shadow-neon border border-aespa-blue"
-             :class="{ 'border-aespa-pink shadow-neon': currentPhase === index + 1 }">
+             :class="{ 'border-aespa-purple shadow-neon': currentPhase === index + 1 }">
           <div class="text-lg font-bold mb-2 text-aespa-blue" x-text="`Phase ${index + 1}: $${phase.startBalance.toFixed(0)} → $${phase.endBalance.toFixed(0)}`"></div>
-          <div class="text-sm text-aespa-pink" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
+          <div class="text-sm text-aespa-purple" x-text="`${phase.completedTasks}/${phase.totalTasks} tasks completed`"></div>
           <div class="bg-slate-700 rounded-full h-3 mt-3 overflow-hidden">
             <div class="progress-bar h-full rounded-full" :style="`width: ${calculatePhaseProgress(index + 1)}%`"></div>
           </div>
@@ -233,21 +255,21 @@
     <div class="responsive-grid gap-8">
       <!-- Trade Entry Panel -->
       <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
-        <h2 class="text-lg font-bold mb-4 text-crypto-blue border-b border-slate-700 pb-2">Current Task: <span x-text="`${currentPhase}.${currentTask}`"></span></h2>
-        <p class="my-2">Current Balance: <span class="font-medium" x-text="`$${currentBalance.toFixed(2)}`"></span></p>
-        <p class="my-2">Profit Target: <span class="font-medium" x-text="`$${getCurrentProfitTarget().toFixed(2)}`"></span></p>
-        <p class="my-2">Remaining to Target: <span class="font-medium" x-text="`$${(getCurrentProfitTarget() - currentTaskProfit).toFixed(2)}`"></span></p>
-        
-        <div class="bg-slate-800 rounded-lg p-4 mt-4">
-          <h3 class="text-lg font-bold mb-2 text-crypto-blue">Task Status</h3>
-          <p class="my-1"><strong>Current Phase:</strong> <span class="font-medium" x-text="currentPhase"></span></p>
-          <p class="my-1"><strong>Current Task:</strong> <span class="font-medium" x-text="currentTask"></span></p>
-          <p class="my-1"><strong>Task Profit:</strong> <span class="font-medium" x-text="`$${currentTaskProfit.toFixed(2)}`"></span></p>
-          <p class="my-1"><strong>Progress:</strong> <span class="font-medium" x-text="`${(currentTaskProfit / getCurrentProfitTarget() * 100).toFixed(1)}%`"></span></p>
+        <h2 class="section-title border-b border-slate-700 pb-2">Current Task: <span class="value-highlight" x-text="`${currentPhase}.${currentTask}`"></span></h2>
+        <div class="info-box">
+          <p>Current Balance: <span class="value-highlight" x-text="`$${currentBalance.toFixed(2)}`"></span></p>
+          <p>Profit Target: <span class="value-highlight" x-text="`$${getCurrentProfitTarget().toFixed(2)}`"></span></p>
+          <p>Remaining to Target: <span class="value-highlight" x-text="`$${(getCurrentProfitTarget() - currentTaskProfit).toFixed(2)}`"></span></p>
         </div>
-
+        <div class="info-box">
+          <h3 class="section-title">Task Status</h3>
+          <p>Current Phase: <span class="value-highlight" x-text="currentPhase"></span></p>
+          <p>Current Task: <span class="value-highlight" x-text="currentTask"></span></p>
+          <p>Task Profit: <span class="value-highlight" x-text="`$${currentTaskProfit.toFixed(2)}`"></span></p>
+          <p>Progress: <span class="value-highlight" x-text="`${(currentTaskProfit / getCurrentProfitTarget() * 100).toFixed(1)}%`"></span></p>
+        </div>
         <div class="mt-6">
-          <h3 class="text-lg font-bold mb-3 text-crypto-blue">Enter New Trade Result</h3>
+          <h3 class="section-title">Enter New Trade Result</h3>
           <input type="number" x-model.number="tradeAmount" placeholder="Profit/Loss amount" step="0.01"
                  class="bg-slate-800 border border-slate-600 rounded-md px-4 py-2 w-full text-white mb-3 focus:outline-none focus:ring-2 focus:ring-crypto-blue"
                  @keyup.enter="addTrade()">
@@ -259,23 +281,23 @@
 
       <!-- Stats Panel -->
       <div class="bg-crypto-card rounded-lg p-6 shadow-lg border border-slate-700">
-        <h2 class="text-xl font-bold mb-2 text-crypto-blue border-b border-slate-700 pb-2">Trading Statistics</h2>
+        <h2 class="section-title border-b border-slate-700 pb-2">Trading Statistics</h2>
         <div class="responsive-grid gap-3 mt-4">
-          <div class="bg-slate-800 p-4 rounded-lg">
-            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Overall</h3>
-            <p class="my-1"><strong>Total Profit:</strong> <span class="font-medium" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
-            <p class="my-1"><strong>Total Trades:</strong> <span class="font-medium" x-text="totalTrades"></span></p>
-            <p class="my-1"><strong>Win Rate:</strong> <span class="font-medium" x-text="`${calculateWinRate()}%`"></span></p>
+          <div class="info-box">
+            <h3 class="section-title">Overall</h3>
+            <p>Total Profit: <span class="value-highlight" x-text="`$${(currentBalance - 100).toFixed(2)}`"></span></p>
+            <p>Total Trades: <span class="value-highlight" x-text="totalTrades"></span></p>
+            <p>Win Rate: <span class="value-highlight" x-text="`${calculateWinRate()}%`"></span></p>
           </div>
-          <div class="bg-slate-800 p-4 rounded-lg">
-            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Phase</h3>
-            <p class="my-1"><strong>Completed Tasks:</strong> <span class="font-medium" x-text="phases[currentPhase-1].completedTasks"></span>/<span x-text="phases[currentPhase-1].totalTasks"></span></p>
-            <p class="my-1"><strong>Phase Progress:</strong> <span class="font-medium" x-text="`${calculatePhaseProgress(currentPhase).toFixed(1)}%`"></span></p>
+          <div class="info-box">
+            <h3 class="section-title">Current Phase</h3>
+            <p>Completed Tasks: <span class="value-highlight" x-text="phases[currentPhase-1].completedTasks"></span>/<span x-text="phases[currentPhase-1].totalTasks"></span></p>
+            <p>Phase Progress: <span class="value-highlight" x-text="`${calculatePhaseProgress(currentPhase).toFixed(1)}%`"></span></p>
           </div>
-          <div class="bg-slate-800 p-4 rounded-lg">
-            <h3 class="text-lg font-bold mb-2 text-crypto-blue">Current Task</h3>
-            <p class="my-1"><strong>Trades in Task:</strong> <span class="font-medium" x-text="getCurrentTaskTrades().length"></span></p>
-            <p class="my-1"><strong>Average Trade:</strong> <span class="font-medium" x-text="`$${calculateAverageTradeForTask().toFixed(2)}`"></span></p>
+          <div class="info-box">
+            <h3 class="section-title">Current Task</h3>
+            <p>Trades in Task: <span class="value-highlight" x-text="getCurrentTaskTrades().length"></span></p>
+            <p>Average Trade: <span class="value-highlight" x-text="`$${calculateAverageTradeForTask().toFixed(2)}`"></span></p>
           </div>
         </div>
         
