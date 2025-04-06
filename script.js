@@ -41,7 +41,19 @@ updateChart(){
 addTrade() {
   if (this.tradeAmount == null || isNaN(this.tradeAmount)) return;
   this.currentBalance += this.tradeAmount;
-  this.tradeAmount > 0 ? this.winningTrades++ : this.losingTrades++;
+  if (this.tradeAmount > 0) {
+    this.winningTrades++;
+    const rewardImages = [
+      'ningning-aespa-armageddon-480@0@j-thumb.jpg',
+      'giselle-aespa-armageddon-454@0@j-thumb.jpg',
+      'winter-aespa-armageddon-486@0@j-thumb.jpg',
+      'wallpaper/karina-got-the-beat-stamp-on-it-girls-on-top-165@0@i-thumb.jpg'
+    ];
+    const randomImage = rewardImages[Math.floor(Math.random() * rewardImages.length)];
+    showRewardModal(randomImage);
+  } else {
+    this.losingTrades++;
+  }
   this.tradeHistory.push({
     phase: this.currentPhase,
     task: this.currentTask,
@@ -62,8 +74,13 @@ checkTaskCompletion(){
     this.excessProfit=this.currentTaskProfit-target;
     this.phases[this.currentPhase-1].completedTasks++;
     if(this.phases[this.currentPhase-1].completedTasks>=this.phases[this.currentPhase-1].totalTasks){
-      if(this.currentPhase<this.phases.length){this.currentPhase++,this.currentTask=1;}
-      else{console.log('Trading plan completed!');return;}
+      if(this.currentPhase<this.phases.length){
+        this.currentPhase++;
+        this.currentTask=1;
+      } else {
+        alert('Congratulations! You have successfully completed your trading plan. Keep up the great work!');
+        return;
+      }
     } else this.currentTask++;
     this.currentTaskProfit=this.excessProfit;this.excessProfit=0;this.checkTaskCompletion();
   }
