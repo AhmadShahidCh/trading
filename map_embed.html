@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phlebotomy Clinics Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .widget-container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .left-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #ddd;
+        }
+        .header {
+            background: #333333;
+            color: #ECBA08;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .search-container {
+            padding: 15px;
+            background: #f7f7f7;
+            border-bottom: 1px solid #ddd;
+        }
+        #search-input {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .controls {
+            padding: 10px 15px;
+            background: #f7f7f7;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #reset-view {
+            padding: 8px 12px;
+            background: #333333;
+            color: #ECBA08;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #reset-view:hover {
+            background: #2a2a2a;
+        }
+        #map {
+            flex-grow: 1;
+            width: 100%;
+        }
+        .location-list {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .location-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .location-item:hover {
+            background-color: #f1f1f1;
+        }
+        .branding {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+            background: #f7f7f7;
+            border-top: 1px solid #ddd;
+        }
+        @media (max-width: 768px) {
+            .widget-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .right-column {
+                border-left: none;
+                border-top: 1px solid #ddd;
+            }
+            .left-column {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="left-column">
+            <div id="map"></div>
+        </div>
+        <div class="right-column">
+            <div class="header">
+                Phlebotomy Clinics Locator
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search by postcode or clinic name..." class="form-control">
+            </div>
+            <div class="controls">
+                <span id="total-locations"></span>
+                <button id="reset-view" class="btn btn-primary">Reset Map View</button>
+            </div>
+            <div class="location-list" id="location-list"></div>
+            <div class="branding">
+                Phlebotomy Clinics Map | © 2025
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map centered on UK
+            const map = L.map('map', { attributionControl: false }).setView([54.093409, -2.89479], 6);
+            
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Clinic data from CSV
+            const clinics = [
+                { name: "EDINBURGH PRINCES ST", address: "83 Princes Street, Edinburgh, EH2 2ER", postcode: "EH2 2ER", latLng: [55.9533, -3.1883] },
+                { name: "LEEDS MERRION CTR (Rm 2)", address: "31-35 The Merrion Centre, Leeds, West Yorkshire. LS2 8NG", postcode: "LS2 8NG", latLng: [53.8008, -1.5471] },
+                { name: "LEEDS MERRION CTR (Rm1)", address: "31-35 The Merrion Centre, Leeds, West Yorkshire. LS2 8NG", postcode: "LS2 8NG", latLng: [53.8008, -1.5471] },
+                { name: "YORK MARKET ST", address: "17 Market Street, York, YO1 8SL", postcode: "YO1 8SL", latLng: [53.9599, -1.0873] },
+                { name: "METRO CTR GATESHEAD", address: "Cameron Walk, Superdrug Unit 68, Gateshead, NE11 9YR", postcode: "NE11 9YR", latLng: [54.9593, -1.6682] },
+                { name: "HEADINGLEY", address: "Unit 20/21 Arndale Centre, Headingley, West Yorkshire, LS6 2UE", postcode: "LS6 2UE", latLng: [53.8195, -1.5778] },
+                { name: "GLASGOW MEARNS CROSS", address: "Unit 1, The Avenue, Mearns Cross, Glasgow G77 6EY", postcode: "G77 6EY", latLng: [55.7793, -4.3329] },
+                { name: "WHITE ROSE CTR LEEDS", address: "5A Lower Level White Rose Shopping Centre, Leeds LS11 8LL", postcode: "LS11 8LL", latLng: [53.7629, -1.5749] },
+                { name: "GLASGOW SAUCHIEHALL ST", address: "Unit 2a Sauchiehall Centre, 167 Sauchiehall Street, Glasgow. G2 3ER", postcode: "G2 3ER", latLng: [55.8652, -4.2576] },
+                { name: "NEWCASTLE NORTHUMBERLAND ST", address: "46-52 Northumberland Street, Newcastle-upon-Tyne NE1 7DF", postcode: "NE1 7DF", latLng: [54.9783, -1.6178] },
+                { name: "SILVERBURN SHOPPING CTR GLASGOW", address: "Unit B4 Silverburn Shopping Centre, Glasgow, G53 6QR", postcode: "G53 6QR", latLng: [55.8238, -4.3478] },
+                { name: "ABERDEEN ST NICHOLAS", address: "Unit E1, St Nicholas Shopping Centre, Aberdeen, AB10 1HW", postcode: "AB10 1HW", latLng: [57.1497, -2.0943] },
+                { name: "DURHAM ARNISON", address: "Unit G Arnison Shopping Centre, Durham, DH1 5GB", postcode: "DH1 5GB", latLng: [54.8061, -1.5733] },
+                { name: "INVERNESS RETAIL PARK", address: "Unit 5a Inverness Retail Park, Inverness, IV2 7GD", postcode: "IV2 7GD", latLng: [57.4702, -4.2246] },
+                { name: "BUCHANAN GALLERIES", address: "Unit 7, Level 3 Buchanan Galleries, Glasgow, G1 2GF", postcode: "G1 2GF", latLng: [55.8642, -4.2518] },
+                { name: "EDINBURGH CRAIGLEITH", address: "Unit 7c Craigleith Shopping Park, South Groathill Ave, Edinburgh, EH4 2LN", postcode: "EH4 2LN", latLng: [55.9667, -3.2385] },
+                { name: "GATESHEAD TEAM VALLEY", address: "Unit 7.2A Team Valley Retail Park, Gateshead, NE11 0BD", postcode: "NE11 0BD", latLng: [54.9300, -1.6245] },
+                { name: "LEEDS CROWN POINT", address: "Unit 5a Crown Point Shopping Centre, Junction Street, Leeds, LS10 1ET", postcode: "LS10 1ET", latLng: [53.7950, -1.5310] },
+                { name: "GLASGOW BRAEHEAD", address: "Unit 42/42A Braehead Shopping Centre, Glasgow, G51 4BP", postcode: "G51 4BP", latLng: [55.8723, -4.3683] },
+                { name: "SHEFFIELD CRYSTAL PEAKS SHOPPING CTR", address: "12/13 Crystal Peaks Shopping Centre, Sheffield S20 7PQ", postcode: "S20 7PQ", latLng: [53.3280, -1.3570] },
+                { name: "LIVERPOOL PARKER ST", address: "11-17 Parker Street, Liverpool. L1 1DJ", postcode: "L1 1DJ", latLng: [53.4054, -2.9805] },
+                { name: "MEADOWHALL SHOPPING CTR SHEFFIELD", address: "41 High Street, Sheffield, S9 1EW", postcode: "S9 1EW", latLng: [53.4143, -1.4128] },
+                { name: "MANCHESTER PICCADILY GARDENS", address: "7-9 Piccadilly, Manchester. M1 1LZ", postcode: "M1 1LZ", latLng: [53.4809, -2.2374] },
+                { name: "BANGOR WALES MENAI CTR", address: "Unit 6. The Menai Centre, Garth Road, Bangor, LL57 1DN", postcode: "LL57 1DN", latLng: [53.2260, -4.1290] },
+                { name: "WAKEFIELD TRINITY WALK", address: "Unit G27 Trinity Walk, Wakefield, West Yorkshire, WF1 1QU", postcode: "WF1 1QU", latLng: [53.6833, -1.4977] },
+                { name: "LIVERPOOL SPEKE", address: "Unit 4a New Mersey Shopping Park, Speke Road, Liverpool, Liverpool", postcode: "L24 8QB", latLng: [53.3464, -2.8490] },
+                { name: "LEICESTER FOSSE PARK", address: "Unit 5b Fosse Park, Leicester, LE19 1HX", postcode: "LE19 1HX", latLng: [52.6079, -1.1634] },
+                { name: "MANCHESTER OXFORD ST", address: "44 Oxford Street, Manchester. M1 5EJ", postcode: "M1 5EJ", latLng: [53.4754, -2.2422] },
+                { name: "ELLESMERE COLLISEUM", address: "Unit R5 The Coliseum Retail Park, Ellesmere Port, CH65 9HD", postcode: "CH65 9HD", latLng: [53.2845, -2.8992] },
+                { name: "BRADFORD BROADWAY", address: "Unit 21 Charles Street Mall, Bradford, BD1 1JR", postcode: "BD1 1JR", latLng: [53.7949, -1.7529] },
+                { name: "PRESTON DEEPDALE", address: "Unit H1A1 Deepdale Shopping Centre, Preston, Lancashire, PR1 6QY", postcode: "PR1 6QY", latLng: [53.7651, -2.6894] },
+                { name: "CHESTER BROUGHTON", address: "Unit 3A2 Chester Road, Broughton, Chester, CH4 0DP", postcode: "CH4 0DP", latLng: [53.1866, -2.9980] },
+                { name: "DENTON CROWN POINT", address: "Unit 16B Worthington Way, Point North, Denton, M34 3JP", postcode: "M34 3LF", latLng: [53.4540, -2.1120] },
+                { name: "BOLTON MIDDLEBROOK", address: "Unit 12C Middlebrook Retail Park, Bolton, BL6 6JA", postcode: "BL6 6JA", latLng: [53.5834, -2.5389] },
+                { name: "WIGAN", address: "Unit 8B Loire Drive, Wigan, WN5 0UH", postcode: "WN5 0UH", latLng: [53.5400, -2.6382] },
+                { name: "RUSHDEN LAKES", address: "Unit C4 Lakes Shopping Centre, Rushden, NN10 6FH", postcode: "NN10 6FH", latLng: [52.3040, -0.6068] },
+                { name: "DONCASTER FRENCHGATE", address: "Unit 21 Frenchgate Shopping Centre, Doncaster, DN1 1LF", postcode: "DN1 1LF", latLng: [53.5225, -1.1332] },
+                { name: "SHEFFIELD FARGATE", address: "33/35 Fargate, Sheffield, S1 2HD", postcode: "S1 2HD", latLng: [53.3802, -1.4703] },
+                { name: "EALING", address: "18-19 The Broadway Shopping Centre, Ealing, London. W5 5JY", postcode: "W5 5JY", latLng: [51.5134, -0.3034] },
+                { name: "CHICHESTER", address: "80 East Street, Chichester, PO19 1HA", postcode: "PO19 1HA", latLng: [50.8365, -0.7792] },
+                { name: "BATH WESTGATE", address: "30-32 Westgate Street, Bath, Avon. BA1 1EL", postcode: "BA1 1EL", latLng: [51.3810, -2.3588] },
+                { name: "MILTON KEYNES", address: "Unit 4, Woolworth Dvlpmnt, Midsummer Arcade, Central Milton Keynes. MK9 3BB", postcode: "MK9 3BB", latLng: [52.0406, -0.7594] },
+                { name: "EPSOM", address: "Unit 55, 4 West Square, Epsom, KT18 5DB", postcode: "KT18 5DB", latLng: [51.3320, -0.2702] },
+                { name: "BRISTOL BROADMEAD", address: "39-43 Broadmead, Bristol, Avon. BS1 3EU", postcode: "BS1 3EU", latLng: [51.4585, -2.5881] },
+                { name: "BIRMINGHAM CORPORATION ST", address: "Victoria House, 2 Union Street, Birmingham, B2 4SW", postcode: "B2 4SW", latLng: [52.4794, -1.8983] },
+                { name: "CARDIFF QUEENS WEST", address: "1-2 & 7 Queens West, Cardiff, CF10 2AQ", postcode: "CF10 2AQ", latLng: [51.4816, -3.1791] },
+                { name: "LUTON", address: "69-73 Arndale Centre, Luton, Bedfordshire. LU1 2TJ", postcode: "LU1 2TJ", latLng: [51.8787, -0.4200] },
+                { name: "HOUNSLOW", address: "1-4 Trinity Parade, Hounslow, TW3 1HG", postcode: "TW3 1HG", latLng: [51.4716, -0.3636] },
+                { name: "GUILDFORD", address: "101 High Street, Guildford, Surrey GU1 3DP", postcode: "GU1 3DP", latLng: [51.2362, -0.5704] },
+                { name: "BASINGSTOKE", address: "10-12 Hampstead House, The Walks Shopping Ctr, Basingstoke, Hants. RG21 7LG", postcode: "RG21 7LG", latLng: [51.2665, -1.0872] },
+                { name: "READING BROAD ST", address: "Unit 2, 55-59 Broad Street, Reading, Berkshire. RG1 2AF", postcode: "RG1 2AF", latLng: [51.4551, -0.9700] },
+                { name: "STAINES", address: "Unit 26 The Elmsleigh Centre, Staines, Middlesex, TW18 4QB", postcode: "TW18 4QB", latLng: [51.4336, -0.5085] },
+                { name: "BULLRING BIRMINGHAM", address: "Health Clinic, Bullring Shopping Centre, Level 01, Birmingham", postcode: "B5 4BA", latLng: [52.4776, -1.8934] },
+                { name: "BRIGHTON WESTERN RD", address: "78 Western Road, Brighton BN1 2HA", postcode: "BN1 2HA", latLng: [50.8244, -0.1488] },
+                { name: "RUGBY ELLIOTTS FIELD", address: "Unit 8 Elliots Field Shopping Park, Rugby, CV21 1SR", postcode: "CV21 1SR", latLng: [52.3748, -1.2651] },
+                { name: "THE FORT BIRMINGHAM", address: "Unit 6D/E The Fort Shopping Park, Birmingham, B24 9FP", postcode: "B24 9FP", latLng: [52.5177, -1.8394] },
+                { name: "PLYMOUTH DRAKES CIRCUS", address: "Units 12 & 13 Drakes Circus Shopping Centre, Plymouth, PL1 1EA", postcode: "PL1 1EA", latLng: [50.3737, -4.1380] },
+                { name: "BRISTOL GALLACHER", address: "Unit E1, Gallagher Retail Park, Bristol, BS30 7DA", postcode: "BS30 7DA", latLng: [51.4477, -2.4989] },
+                { name: "NEWPORT RETAIL PARK", address: "Unit 14 Newport Retail Park, Spytty Road, Newport, NP19 4QQ", postcode: "NP19 4QQ", latLng: [51.5800, -2.9408] },
+                { name: "CARDIFF ST DAVIDS", address: "35-41 St David's Shopping Centre, Cardiff, CF10 2ER", postcode: "CF10 2ER", latLng: [51.4800, -3.1752] },
+                { name: "BALHAM", address: "176 Balham High Road, SW12 9BW", postcode: "SW12 9BW", latLng: [51.4445, -0.1533] },
+                { name: "BASILDON MAYFLOWER", address: "Unit 2a Gardiners Link, Basildon, SS14 3HZ", postcode: "SS14 3HZ", latLng: [51.5762, 0.4568] },
+                { name: "WOOLWICH", address: "14-20 Powis Street, Woolwich, London, SE18 6LF", postcode: "SE18 6LF", latLng: [51.4901, 0.0667] },
+                { name: "SHEPHERDS BUSH GREEN UXBRIDGE RD", address: "92-94 Uxbridge Road, Shepherds Bush, London. W12 8LR", postcode: "W12 8LR", latLng: [51.5051, -0.2270] },
+                { name: "EAST HAM", address: "89-93 High Street North, East Ham, London, E6 1HZ", postcode: "E6 1HZ", latLng: [51.5388, 0.0519] },
+                { name: "LAKESIDE SHOPPING CTR THURROCK", address: "107-108 Lakeside Shopping Centre, Grays, RM20 2ZG", postcode: "RM20 2ZG", latLng: [51.4908, 0.2824] },
+                { name: "LONDON THE STRAND", address: "49-50 Strand, London. WC2N 5LL", postcode: "WC2N 5LL", latLng: [51.5095, -0.1220] },
+                { name: "NORWICH ST STEPHENS ST", address: "12 St Stephens Street, Norwich, Norfolk. NR1 3SA", postcode: "NR1 3SA", latLng: [52.6279, 1.2897] },
+                { name: "WHITGIFT CTR CROYDON", address: "Unit 3-5, Woolworth Development, Whitgift Centre, Croydon, Surrey. CR0 1US", postcode: "CR0 1US", latLng: [51.3762, -0.0982] },
+                { name: "COLCHESTER HIGH ST", address: "22-24 High Street, Colchester, CO1 1DB", postcode: "CO1 1DB", latLng: [51.8895, 0.9003] },
+                { name: "CROYDON CENTRALE", address: "Unit 13-17 Centrale Shopping Centre, Croydon, Surrey, CR0 1TY", postcode: "CR0 1TY", latLng: [51.3746, -0.1012] },
+                { name: "HAMMERSMITH KINGS MALL", address: "65-69 King Street, Hammersmith, London, W6 9HX", postcode: "W6 9HX", latLng: [51.4930, -0.2291] },
+                { name: "STREATHAM HILL", address: "Unit 3, 142-170 Streatham Hill. London, SW2 4RS", postcode: "SW2 4RS", latLng: [51.4400, -0.1273] },
+                { name: "LONDON BLACKFRIARS", address: "36 - 37 New Bridge Street, London. EC4V 6BJ", postcode: "EC4V 6BJ", latLng: [51.5126, -0.1033] },
+                { name: "BRENT CROSS", address: "Unit D04/D06 Brent Cross Shopping Centre, London, NW4 3FP", postcode: "NW4 3FP", latLng: [51.5766, -0.2136] },
+                { name: "BLUEWATER", address: "Unit LO86/088 Bluewater Shopping Centre, Dartford. DA9 9ST", postcode: "DA9 9ST", latLng: [51.4396, 0.2728] }
+            ];
+            
+            // Create markers for each clinic
+            const markers = [];
+            const locationList = document.getElementById('location-list');
+            const totalLocations = document.getElementById('total-locations');
+            totalLocations.textContent = `Total Locations: ${clinics.length}`;
+            
+            clinics.forEach((clinic, index) => {
+                // Create marker
+                const marker = L.marker(clinic.latLng)
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="clinic-name">${clinic.name}</div>
+                        <div class="clinic-address">${clinic.address}</div>
+                        <div class="clinic-address">Postcode: ${clinic.postcode}</div>
+                    `);
+                
+                markers.push(marker);
+                
+                // Add to location list
+                const item = document.createElement('div');
+                item.className = 'location-item';
+                item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
+                item.onclick = function() {
+                    map.setView(clinic.latLng, 14);
+                    marker.openPopup();
+                };
+                locationList.appendChild(item);
+            });
+            
+            // Search functionality
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                locationList.innerHTML = '';
+                
+                clinics.forEach((clinic, index) => {
+                    // Check if clinic matches search
+                    if (
+                        clinic.name.toLowerCase().includes(searchTerm) ||
+                        clinic.address.toLowerCase().includes(searchTerm) ||
+                        clinic.postcode.toLowerCase().includes(searchTerm)
+                    ) {
+                        // Add to filtered location list
+                        const item = document.createElement('div');
+                        item.className = 'location-item';
+                        item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
+                        item.onclick = function() {
+                            map.setView(clinic.latLng, 14);
+                            markers[index].openPopup();
+                        };
+                        locationList.appendChild(item);
+                        
+                        // Highlight marker
+                        markers[index]._icon.style.filter = "";
+                    } else {
+                        // Dim marker
+                        markers[index]._icon.style.filter = "grayscale(100%) opacity(30%)";
+                    }
+                });
+            });
+            
+            // Reset view button
+            document.getElementById('reset-view').addEventListener('click', function() {
+                map.setView([54.093409, -2.89479], 6);
+                searchInput.value = '';
+                
+                // Reset all markers
+                markers.forEach((marker, index) => {
+                    marker._icon.style.filter = "";
+                });
+                
+                // Rebuild location list
+                locationList.innerHTML = '';
+                clinics.forEach((clinic, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'location-item';
+                    item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
+                    item.onclick = function() {
+                        map.setView(clinic.latLng, 14);
+                        markers[index].openPopup();
+                    };
+                    locationList.appendChild(item);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
