@@ -40,8 +40,8 @@
             border-left: 1px solid #ddd;
         }
         .header {
-            background: #333333;
-            color: #ECBA08;
+            background: #ffb81f;
+            color: white;
             padding: 15px;
             text-align: center;
             font-size: 18px;
@@ -49,7 +49,7 @@
         }
         .search-container {
             padding: 15px;
-            background: #f7f7f7;
+            background: #f0f7ff;
             border-bottom: 1px solid #ddd;
         }
         #search-input {
@@ -58,26 +58,30 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 14px;
+            color: #333333;
         }
         .controls {
             padding: 10px 15px;
-            background: #f7f7f7;
+            background: #f0f7ff;
             border-bottom: 1px solid #ddd;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #333333;
         }
-        #reset-view {
+        #reset-view, .book-button {
             padding: 8px 12px;
-            background: #333333;
-            color: #ECBA08;
+            background: #ffb81f;
+            color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            text-transform: uppercase;
+            font-weight: bold;
         }
-        #reset-view:hover {
-            background: #2a2a2a;
+        #reset-view:hover, .book-button:hover {
+            background: #d99d1a;
         }
         #map {
             flex-grow: 1;
@@ -89,26 +93,85 @@
             overflow-y: auto;
         }
         .location-item {
-            padding: 10px;
+            padding: 15px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             font-size: 14px;
+            transition: background-color 0.2s;
+            color: #333333;
         }
         .location-item:hover {
-            background-color: #f1f1f1;
+            background-color: #f0f7ff;
+        }
+        .location-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #ffb81f;
+        }
+        .location-distance {
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 5px;
+        }
+        .location-address {
+            color: #333333;
+            margin-bottom: 10px;
+        }
+        .location-buttons {
+            margin-top: 10px;
+        }
+        .available-tag {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            margin-left: 10px;
         }
         .branding {
             text-align: center;
             padding: 10px;
             font-size: 12px;
-            color: #666;
-            background: #f7f7f7;
+            color: #333333;
+            background: #f0f7ff;
             border-top: 1px solid #ddd;
+        }
+        .distance-badge {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 5px;
+        }
+        .car-icon {
+            margin-right: 5px;
+            color: #333333;
+        }
+        .cluster-marker {
+            background-color: #ffb81f;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .notification {
+            background-color: #ff9800;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 14px;
         }
         @media (max-width: 768px) {
             .widget-container {
                 flex-direction: column;
                 height: auto;
+                min-height: 100vh;
             }
             .right-column {
                 border-left: none;
@@ -127,14 +190,17 @@
         </div>
         <div class="right-column">
             <div class="header">
-                Phlebotomy Clinics Locator
+                Find Your Nearest Blood Test Clinic
             </div>
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search by postcode or clinic name..." class="form-control">
+                <input type="text" id="search-input" placeholder="Your postcode or town..." class="form-control">
+                <div id="search-notification" class="notification" style="display: none;">
+                    Search by clinic name, town, or partial postcode
+                </div>
             </div>
             <div class="controls">
                 <span id="total-locations"></span>
-                <button id="reset-view" class="btn btn-primary">Reset Map View</button>
+                <button id="reset-view" class="btn">Reset Map View</button>
             </div>
             <div class="location-list" id="location-list"></div>
             <div class="branding">
@@ -147,15 +213,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize the map centered on UK
             const map = L.map('map', { attributionControl: false }).setView([54.093409, -2.89479], 6);
-            
-            // Add OpenStreetMap tile layer
+
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            
-            // Clinic data from CSV
+
             const clinics = [
                 { name: "EDINBURGH PRINCES ST", address: "83 Princes Street, Edinburgh, EH2 2ER", postcode: "EH2 2ER", latLng: [55.9533, -3.1883] },
                 { name: "LEEDS MERRION CTR (Rm 2)", address: "31-35 The Merrion Centre, Leeds, West Yorkshire. LS2 8NG", postcode: "LS2 8NG", latLng: [53.8008, -1.5471] },
@@ -234,92 +297,285 @@
                 { name: "BRENT CROSS", address: "Unit D04/D06 Brent Cross Shopping Centre, London, NW4 3FP", postcode: "NW4 3FP", latLng: [51.5766, -0.2136] },
                 { name: "BLUEWATER", address: "Unit LO86/088 Bluewater Shopping Centre, Dartford. DA9 9ST", postcode: "DA9 9ST", latLng: [51.4396, 0.2728] }
             ];
-            
-            // Create markers for each clinic
+
+            const postcodeData = {
+                "UB10": { latitude: 51.5469, longitude: -0.4785 }
+            };
+
+            document.getElementById('search-notification').style.display = 'none';
+
+            const clinicIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 0C8.268 0 2 6.268 2 14C2 24.5 16 40 16 40C16 40 30 24.5 30 14C30 6.268 23.732 0 16 0Z" fill="#ffb81f"/>
+                        <circle cx="16" cy="15" r="6" fill="white"/>
+                        <circle cx="16" cy="15" r="4" fill="#ffb81f"/>
+                    </svg>
+                `,
+                iconSize: [32, 40],
+                iconAnchor: [16, 40],
+                popupAnchor: [0, -40]
+            });
+
             const markers = [];
             const locationList = document.getElementById('location-list');
             const totalLocations = document.getElementById('total-locations');
             totalLocations.textContent = `Total Locations: ${clinics.length}`;
-            
+            let userLocation = null;
+            const searchInput = document.getElementById('search-input');
+
             clinics.forEach((clinic, index) => {
-                // Create marker
-                const marker = L.marker(clinic.latLng)
+                const marker = L.marker(clinic.latLng, { icon: clinicIcon })
                     .addTo(map)
                     .bindPopup(`
-                        <div class="clinic-name">${clinic.name}</div>
-                        <div class="clinic-address">${clinic.address}</div>
-                        <div class="clinic-address">Postcode: ${clinic.postcode}</div>
-                    `);
-                
+                        <div style="font-weight: bold; color: #ffb81f; margin-bottom: 5px;">${clinic.name}</div>
+                        <div style="margin-bottom: 5px;">${clinic.address}</div>
+                        <div style="margin-bottom: 10px;">Postcode: ${clinic.postcode}</div>
+                        <button class="book-button btn btn-primary btn-sm" onclick="alert('Booking functionality would go here')">Book This Clinic</button>
+                    `, { minWidth: 200 });
                 markers.push(marker);
-                
-                // Add to location list
                 const item = document.createElement('div');
                 item.className = 'location-item';
-                item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
-                item.onclick = function() {
-                    map.setView(clinic.latLng, 14);
-                    marker.openPopup();
+                item.innerHTML = `
+                    <div class="location-name">${clinic.name} <span class="available-tag">✓</span></div>
+                    <div class="location-distance" id="distance-${index}"></div>
+                    <div class="location-address">${clinic.address}<br>Postcode: ${clinic.postcode}</div>
+                    <div class="location-buttons">
+                        <button class="book-button" onclick="alert('Booking functionality would go here')">BOOK THIS CLINIC</button>
+                    </div>
+                `;
+                item.onclick = function(e) {
+                    if (e.target.tagName !== 'BUTTON') {
+                        map.setView(clinic.latLng, 14);
+                        marker.openPopup();
+                    }
                 };
                 locationList.appendChild(item);
             });
-            
-            // Search functionality
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                
-                locationList.innerHTML = '';
-                
-                clinics.forEach((clinic, index) => {
-                    // Check if clinic matches search
-                    if (
-                        clinic.name.toLowerCase().includes(searchTerm) ||
-                        clinic.address.toLowerCase().includes(searchTerm) ||
-                        clinic.postcode.toLowerCase().includes(searchTerm)
-                    ) {
-                        // Add to filtered location list
-                        const item = document.createElement('div');
-                        item.className = 'location-item';
-                        item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
-                        item.onclick = function() {
-                            map.setView(clinic.latLng, 14);
-                            markers[index].openPopup();
-                        };
-                        locationList.appendChild(item);
-                        
-                        // Highlight marker
-                        markers[index]._icon.style.filter = "";
-                    } else {
-                        // Dim marker
-                        markers[index]._icon.style.filter = "grayscale(100%) opacity(30%)";
+
+            searchInput.addEventListener('keypress', async function(e) {
+                if (e.key === 'Enter') {
+                    const searchTerm = this.value.trim().toLowerCase();
+
+                    if (!searchTerm) {
+                        showNotification("Please enter a search term or postcode");
+                        return;
                     }
-                });
+
+                    let geocodedLocation = null;
+                    const cleanPostcode = searchTerm.toUpperCase().replace(/\s+/g, '');
+                    for (const [prefix, coords] of Object.entries(postcodeData)) {
+                        if (cleanPostcode === prefix || cleanPostcode.startsWith(prefix)) {
+                            geocodedLocation = coords;
+                            break;
+                        }
+                    }
+                    if (!geocodedLocation) {
+                        for (const clinic of clinics) {
+                            if (clinic.postcode.toUpperCase().replace(/\s+/g, '').includes(cleanPostcode)) {
+                                geocodedLocation = {
+                                    latitude: clinic.latLng[0],
+                                    longitude: clinic.latLng[1]
+                                };
+                                break;
+                            }
+                        }
+                    }
+
+                    if (geocodedLocation) {
+                        userLocation = {
+                            latitude: geocodedLocation.latitude,
+                            longitude: geocodedLocation.longitude
+                        };
+
+                        map.setView([userLocation.latitude, userLocation.longitude], 10);
+
+                        if (window.userMarker) map.removeLayer(window.userMarker);
+                        window.userMarker = L.marker([userLocation.latitude, userLocation.longitude], {
+                            icon: L.divIcon({
+                                className: 'user-marker',
+                                html: '<div style="background-color: #E91E63; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white;"></div>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        }).addTo(map).bindPopup('Your Location').openPopup();
+
+                        locationList.innerHTML = '';
+
+                        clinics.forEach((clinic, index) => {
+                            const distance = calculateDistance(
+                                userLocation.latitude,
+                                userLocation.longitude,
+                                clinic.latLng[0],
+                                clinic.latLng[1]
+                            );
+
+                            const item = document.createElement('div');
+                            item.className = 'location-item';
+                            item.innerHTML = `
+                                <div class="location-name">${clinic.name} <span class="available-tag">✓</span></div>
+                                <div class="location-distance"><span class="distance-badge"><span class="car-icon">🚗</span> ${distance} miles away.</span></div>
+                                <div class="location-address">${clinic.address}<br>Postcode: ${clinic.postcode}</div>
+                                <div class="location-buttons">
+                                    <button class="book-button" onclick="alert('Booking functionality would go here')">BOOK THIS CLINIC</button>
+                                </div>
+                            `;
+                            item.onclick = function(e) {
+                                if (e.target.tagName !== 'BUTTON') {
+                                    map.setView(clinic.latLng, 14);
+                                    markers[index].openPopup();
+                                }
+                            };
+
+                            item.dataset.distance = parseFloat(distance);
+
+                            if (markers[index]._icon) markers[index]._icon.style.filter = "";
+
+                            locationList.appendChild(item);
+                        });
+
+                        const items = Array.from(locationList.children);
+                        items.sort((a, b) => {
+                            return parseFloat(a.dataset.distance) - parseFloat(b.dataset.distance);
+                        });
+
+                        locationList.innerHTML = '';
+                        items.forEach(item => locationList.appendChild(item));
+
+                        totalLocations.textContent = `Showing clinics sorted by distance`;
+
+                    } else {
+                        locationList.innerHTML = '';
+                        let matchCount = 0;
+
+                        clinics.forEach((clinic, index) => {
+                            if (
+                                clinic.name.toLowerCase().includes(searchTerm) ||
+                                clinic.address.toLowerCase().includes(searchTerm) ||
+                                clinic.postcode.toLowerCase().includes(searchTerm)
+                            ) {
+                                matchCount++;
+
+                                const item = document.createElement('div');
+                                item.className = 'location-item';
+                                item.innerHTML = `
+                                    <div class="location-name">${clinic.name} <span class="available-tag">✓</span></div>
+                                    <div class="location-distance" id="distance-${index}"></div>
+                                    <div class="location-address">${clinic.address}<br>Postcode: ${clinic.postcode}</div>
+                                    <div class="location-buttons">
+                                        <button class="book-button" onclick="alert('Booking functionality would go here')">BOOK THIS CLINIC</button>
+                                    </div>
+                                `;
+
+                                if (userLocation) {
+                                    const distance = calculateDistance(
+                                        userLocation.latitude,
+                                        userLocation.longitude,
+                                        clinic.latLng[0],
+                                        clinic.latLng[1]
+                                    );
+                                    item.querySelector(`#distance-${index}`).innerHTML =
+                                        `<span class="distance-badge"><span class="car-icon">🚗</span> ${distance} miles away.</span>`;
+                                }
+
+                                item.onclick = function(e) {
+                                    if (e.target.tagName !== 'BUTTON') {
+                                        map.setView(clinic.latLng, 14);
+                                        markers[index].openPopup();
+                                    }
+                                };
+                                locationList.appendChild(item);
+
+                                if (markers[index]._icon) markers[index]._icon.style.filter = "";
+                            } else {
+                                if (markers[index]._icon) markers[index]._icon.style.filter = "grayscale(100%) opacity(30%)";
+                            }
+                        });
+
+                        if (matchCount === 0) {
+                            showNotification("No clinics found matching your search. Try a different term.");
+                            resetView();
+                        } else {
+                            totalLocations.textContent = `Showing ${matchCount} of ${clinics.length} locations`;
+                        }
+                    }
+                }
             });
-            
-            // Reset view button
-            document.getElementById('reset-view').addEventListener('click', function() {
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                if (searchTerm === '') {
+                    resetView();
+                }
+            });
+
+            function resetView() {
                 map.setView([54.093409, -2.89479], 6);
                 searchInput.value = '';
-                
-                // Reset all markers
-                markers.forEach((marker, index) => {
-                    marker._icon.style.filter = "";
+
+                if (window.userMarker) {
+                    map.removeLayer(window.userMarker);
+                    window.userMarker = null;
+                }
+
+                userLocation = null;
+
+                markers.forEach((marker) => {
+                    if (marker._icon) marker._icon.style.filter = "";
                 });
-                
-                // Rebuild location list
+
                 locationList.innerHTML = '';
+                totalLocations.textContent = `Total Locations: ${clinics.length}`;
+
                 clinics.forEach((clinic, index) => {
                     const item = document.createElement('div');
                     item.className = 'location-item';
-                    item.innerHTML = `<strong>${clinic.name}</strong><br>${clinic.address}<br>Postcode: ${clinic.postcode}`;
-                    item.onclick = function() {
-                        map.setView(clinic.latLng, 14);
-                        markers[index].openPopup();
+                    item.innerHTML = `
+                        <div class="location-name">${clinic.name} <span class="available-tag">✓</span></div>
+                        <div class="location-distance" id="distance-${index}"></div>
+                        <div class="location-address">${clinic.address}<br>Postcode: ${clinic.postcode}</div>
+                        <div class="location-buttons">
+                            <button class="book-button" onclick="alert('Booking functionality would go here')">BOOK THIS CLINIC</button>
+                        </div>
+                    `;
+                    item.onclick = function(e) {
+                        if (e.target.tagName !== 'BUTTON') {
+                            map.setView(clinic.latLng, 14);
+                            markers[index].openPopup();
+                        }
                     };
                     locationList.appendChild(item);
                 });
-            });
+            }
+
+            document.getElementById('reset-view').addEventListener('click', resetView);
+
+            setTimeout(() => {
+                showNotification("Enter a postcode, town, or clinic name to find nearby locations");
+            }, 1000);
+
+            function showNotification(message) {
+                const notification = document.getElementById('search-notification');
+                notification.textContent = message;
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 3958.8;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = 
+                    Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const distance = R * c;
+                return distance.toFixed(2);
+            }
         });
     </script>
 </body>
