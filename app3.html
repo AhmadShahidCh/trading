@@ -1,0 +1,322 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>61-Day Compounding Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/octokat@0.10.1/dist/octokat.js"></script>
+    <style>
+        body { background: #f8f9fa; font-family: 'Arial', sans-serif; }
+        .container { max-width: 1200px; }
+        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .table { font-size: 0.9rem; }
+        .chart-container { max-width: 100%; height: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <h1 class="text-center mb-4 fw-bold">61-Day Compounding Tracker</h1>
+
+        <!-- Summary Section -->
+        <div class="card mb-4 p-3">
+            <div id="summary-text">Loading...</div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="card mb-4 p-3" id="form-card">
+            <div id="form-title" class="fw-bold mb-2"></div>
+            <form id="complete-day-form" class="d-flex gap-2">
+                <input type="number" class="form-control" id="actual-balance" placeholder="Actual Balance" required>
+                <button type="submit" class="btn btn-dark">Submit</button>
+            </form>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Day</th>
+                        <th>Date</th>
+                        <th>Target</th>
+                        <th>% Gain</th>
+                        <th>Gain $</th>
+                        <th>Actual</th>
+                    </tr>
+                </thead>
+                <tbody id="days-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container mb-4">
+            <canvas id="progress-chart"></canvas>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="text-center mb-4">
+            <button class="btn btn-outline-danger" id="reset-plan">Reset</button>
+        </div>
+
+        <!-- README -->
+        <div class="text-muted small">
+            <p>Phase 1 (Days 1–10): 15% daily gain<br>
+               Phase 2 (Days 11–27): 10% daily gain<br>
+               Phase 3 (Days 28–61): 6% daily gain<br>
+               Starting capital: $25</p>
+            <p>Risk: Never risk >1–2% equity/trade. Tight stop-loss. Scale down % as capital grows.</p>
+        </div>
+    </div>
+
+    <script>
+        // GitHub API configuration
+        const github = new Octokat({ token: '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' });
+        const repoOwner = 'ahmadshahidch';
+        const repoName = 'trading';
+        const filePath = 'data/completedDays.json';
+        let fileSha = null;
+
+        // Fetch completedDays from GitHub
+        async function fetchDataFromGitHub() {
+            try {
+                const file = await github.repos(repoOwner, repoName).contents(filePath).fetch();
+                fileSha = file.sha;
+                const content = JSON.parse(atob(file.content));
+                completedDays = content || {};
+                lastCompletedDay = Object.keys(completedDays).length ? Math.max(...Object.keys(completedDays).map(Number)) : 0;
+                currentDay = lastCompletedDay + 1 > 61 ? 61 : lastCompletedDay + 1;
+                updateUI();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                completedDays = JSON.parse(localStorage.getItem('completedDays')) || {};
+                updateUI();
+            }
+        }
+
+        // Save completedDays to GitHub
+        async function saveDataToGitHub() {
+            try {
+                await github.repos(repoOwner, repoName).contents(filePath).add({
+                    message: `Update completedDays for day ${currentDay}`,
+                    content: btoa(JSON.stringify(completedDays)),
+                    sha: fileSha
+                });
+                const file = await github.repos(repoOwner, repoName).contents(filePath).fetch();
+                fileSha = file.sha;
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Failed to save data to GitHub. Using localStorage as fallback.');
+                localStorage.setItem('completedDays', JSON.stringify(completedDays));
+            }
+        }
+
+        // Calculate daily gain percentage based on day
+        function getDailyGainPercentage(day) {
+            if (day <= 10) return 0.15;
+            if (day <= 27) return 0.10;
+            return 0.06;
+        }
+
+        // Generate 61 days of data
+        const startDate = new Date('2025-05-29');
+        const days = [];
+        let capital = 25;
+        for (let day = 1; day <= 61; day++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + day - 1);
+            const dateString = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const dailyGainPercentage = getDailyGainPercentage(day);
+            const gainAmount = capital * dailyGainPercentage;
+            const targetCapital = capital + gainAmount;
+            days.push({
+                day,
+                date: dateString,
+                targetCapital: targetCapital.toFixed(2),
+                dailyGainPercentage: (dailyGainPercentage * 100).toFixed(0) + '%',
+                gainAmount: gainAmount.toFixed(2)
+            });
+            capital = targetCapital;
+        }
+
+        // Load completed days from localStorage as fallback
+        let completedDays = JSON.parse(localStorage.getItem('completedDays')) || {};
+        let lastCompletedDay = Object.keys(completedDays).length ? Math.max(...Object.keys(completedDays).map(Number)) : 0;
+        let currentDay = lastCompletedDay + 1 > 61 ? 61 : lastCompletedDay + 1;
+
+        // Get phase progress
+        function getPhase(day) {
+            if (day <= 10) return `Phase 1: Day ${day}/10`;
+            if (day <= 27) return `Phase 2: Day ${day - 10}/17`;
+            return `Phase 3: Day ${day - 27}/34`;
+        }
+
+        // Update summary
+        function updateSummary() {
+            const summary = document.getElementById('summary-text');
+            let html = '';
+            if (lastCompletedDay) {
+                const lastDay = days[lastCompletedDay - 1];
+                const actual = parseFloat(completedDays[lastCompletedDay]).toFixed(2);
+                const target = lastDay.targetCapital;
+                const variance = ((actual - target) / target * 100).toFixed(1);
+                html += `Last: Day ${lastCompletedDay} (${lastDay.date}) | Actual: $${actual} | Target: $${target} | Var: ${variance}%`;
+            } else {
+                html += 'No days completed.';
+            }
+            if (currentDay <= 61) {
+                const currentDayInfo = days[currentDay - 1];
+                html += `<br>Current: Day ${currentDay} (${currentDayInfo.date}) | ${getPhase(currentDay)}`;
+            } else {
+                html += '<br>Plan completed.';
+            }
+            summary.innerHTML = html;
+        }
+
+        // Update form
+        function updateForm() {
+            if (currentDay <= 61) {
+                const currentDayInfo = days[currentDay - 1];
+                document.getElementById('form-title').textContent = `Day ${currentDay} (${currentDayInfo.date})`;
+            } else {
+                document.getElementById('form-card').innerHTML = '<div class="text-success fw-bold">Plan Completed</div>';
+            }
+        }
+
+        // Update table
+        function updateTable() {
+            const tbody = document.getElementById('days-table-body');
+            tbody.innerHTML = '';
+            days.forEach(dayInfo => {
+                const tr = document.createElement('tr');
+                if (dayInfo.day === currentDay) tr.classList.add('table-active');
+                const actual = completedDays[dayInfo.day];
+                let actualText = actual ? `$${parseFloat(actual).toFixed(2)}` : '';
+                if (actual !== undefined) {
+                    const target = parseFloat(dayInfo.targetCapital);
+                    if (actual >= target) tr.classList.add('table-success');
+                    else if (actual >= target * 0.95) tr.classList.add('table-warning');
+                    else tr.classList.add('table-danger');
+                }
+                tr.innerHTML = `
+                    <td>${dayInfo.day}</td>
+                    <td>${dayInfo.date}</td>
+                    <td>$${dayInfo.targetCapital}</td>
+                    <td>${dayInfo.dailyGainPercentage}</td>
+                    <td>$${dayInfo.gainAmount}</td>
+                    <td>${actualText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize chart
+        const ctx = document.getElementById('progress-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Target', data: [], borderColor: '#007bff', fill: false },
+                    { label: 'Actual', data: [], borderColor: '#28a745', fill: false }
+                ]
+            },
+            options: { scales: { y: { beginAtZero: false } }, plugins: { legend: { position: 'top' } } }
+        });
+
+        // Update chart
+        function updateChart() {
+            const completed = Object.keys(completedDays).map(Number).sort();
+            const lastDay = completed.length ? completed[completed.length - 1] : 0;
+            chart.data.labels = lastDay ? Array.from({ length: lastDay }, (_, i) => i + 1) : [];
+            chart.data.datasets[0].data = lastDay ? days.slice(0, lastDay).map(d => parseFloat(d.targetCapital)) : [];
+            chart.data.datasets[1].data = lastDay ? completed.map(day => parseFloat(completedDays[day])) : [];
+            chart.update();
+        }
+
+        // Update UI
+        function updateUI() {
+            updateSummary();
+            updateForm();
+            updateTable();
+            updateChart();
+        }
+
+        // Handle form submission
+        document.getElementById('complete-day-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const actualBalance = parseFloat(document.getElementById('actual-balance').value);
+            if (!isNaN(actualBalance) && currentDay <= 61) {
+                completedDays[currentDay] = actualBalance;
+                localStorage.setItem('completedDays', JSON.stringify(completedDays));
+                await saveDataToGitHub();
+                lastCompletedDay = currentDay;
+                currentDay++;
+                document.getElementById('actual-balance').value = '';
+                updateUI();
+            }
+        });
+
+        // Handle reset
+        document.getElementById('reset-plan').addEventListener('click', async () => {
+            if (confirm('Reset all progress?')) {
+                completedDays = {};
+                localStorage.removeItem('completedDays');
+                try {
+                    await github.repos(repoOwner, repoName).contents(filePath).add({
+                        message: 'Reset completedDays',
+                        content: btoa(JSON.stringify({})),
+                        sha: fileSha
+                    });
+                } catch (error) {
+                    console.error('Error resetting data:', error);
+                }
+                location.reload();
+            }
+        });
+
+        // Initial fetch and render
+        fetchDataFromGitHub();
+    </script>
+</body>
+</html>
