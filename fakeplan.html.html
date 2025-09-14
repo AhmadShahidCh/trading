@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Day Trading Tracker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F0BB 0%, #C4DFAA 50%, #90C8AC 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(115, 169, 173, 0.3);
+            overflow: hidden;
+            border: 2px solid rgba(196, 223, 170, 0.5);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #73A9AD, #90C8AC);
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .table-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .table-header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #73A9AD;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #90C8AC;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(196, 223, 170, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(245, 240, 187, 0.2);
+        }
+
+        tr:hover {
+            background: rgba(196, 223, 170, 0.3);
+        }
+
+        .day-number {
+            font-weight: bold;
+            color: #73A9AD;
+            font-size: 1.1em;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #5a8a8e;
+        }
+
+        .gain {
+            color: #6b9c6f;
+            font-weight: 600;
+        }
+
+        .milestone {
+            background: rgba(245, 240, 187, 0.6) !important;
+            border-left: 4px solid #C4DFAA;
+        }
+
+        .milestone .day-number {
+            color: #8B6F47;
+            font-weight: bold;
+        }
+
+        .checkpoint {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .checkpoint-btn {
+            background: none;
+            border: none;
+            color: #73A9AD;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .checkpoint-btn:hover {
+            background: rgba(115, 169, 173, 0.2);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .checkpoint-btn.completed {
+            color: #6b9c6f;
+            opacity: 1;
+            background: rgba(107, 156, 111, 0.2);
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 40px;
+        }
+
+        .completed-row {
+            background: rgba(196, 223, 170, 0.4) !important;
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .completed-row .amount,
+        .completed-row .gain,
+        .completed-row .day-number {
+            color: #6b9c6f;
+        }
+
+        .stats-bar {
+            background: #73A9AD;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .progress-container {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #90C8AC, #C4DFAA);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            th, td {
+                padding: 4px 2px;
+                font-size: 0.8em;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="table-container">
+            <div class="table-header">
+                <h2><i class="fas fa-chart-line"></i> 30-Day Trading Plan</h2>
+                <p>12% Daily Growth Tracker</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Progress: <span class="stat-value" id="progressText">0/30</span></span>
+                </div>
+                <div class="progress-container">
+                    <div>Days Completed</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Current Target: <span class="stat-value" id="currentTarget">1,120.00</span></span>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-check"></i></th>
+                            <th><i class="fas fa-calendar-day"></i> Day</th>
+                            <th><i class="fas fa-dollar-sign"></i> Starting Amount</th>
+                            <th><i class="fas fa-arrow-up"></i> Daily Gain (12%)</th>
+                            <th><i class="fas fa-piggy-bank"></i> End Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradingTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Trading data
+        const tradingData = [
+            { day: 1, start: 1000.00, gain: 120.00, end: 1120.00 },
+            { day: 2, start: 1120.00, gain: 134.40, end: 1254.40 },
+            { day: 3, start: 1254.40, gain: 150.53, end: 1404.93 },
+            { day: 4, start: 1404.93, gain: 168.59, end: 1573.52 },
+            { day: 5, start: 1573.52, gain: 188.82, end: 1762.34 },
+            { day: 6, start: 1762.34, gain: 211.48, end: 1973.82 },
+            { day: 7, start: 1973.82, gain: 236.86, end: 2210.68 },
+            { day: 8, start: 2210.68, gain: 265.28, end: 2475.96 },
+            { day: 9, start: 2475.96, gain: 297.11, end: 2773.07 },
+            { day: 10, start: 2773.07, gain: 332.77, end: 3105.84 },
+            { day: 11, start: 3105.84, gain: 372.70, end: 3478.54 },
+            { day: 12, start: 3478.54, gain: 417.42, end: 3895.96 },
+            { day: 13, start: 3895.96, gain: 467.51, end: 4363.48 },
+            { day: 14, start: 4363.48, gain: 523.62, end: 4887.09 },
+            { day: 15, start: 4887.09, gain: 586.45, end: 5473.54 },
+            { day: 16, start: 5473.54, gain: 656.83, end: 6130.37 },
+            { day: 17, start: 6130.37, gain: 735.64, end: 6866.01 },
+            { day: 18, start: 6866.01, gain: 823.92, end: 7689.93 },
+            { day: 19, start: 7689.93, gain: 922.79, end: 8612.72 },
+            { day: 20, start: 8612.72, gain: 1033.53, end: 9646.25 },
+            { day: 21, start: 9646.25, gain: 1157.55, end: 10803.80 },
+            { day: 22, start: 10803.80, gain: 1296.46, end: 12100.25 },
+            { day: 23, start: 12100.25, gain: 1452.03, end: 13552.28 },
+            { day: 24, start: 13552.28, gain: 1626.27, end: 15178.56 },
+            { day: 25, start: 15178.56, gain: 1821.43, end: 16999.98 },
+            { day: 26, start: 16999.98, gain: 2040.00, end: 19039.98 },
+            { day: 27, start: 19039.98, gain: 2284.80, end: 21324.78 },
+            { day: 28, start: 21324.78, gain: 2558.97, end: 23883.75 },
+            { day: 29, start: 23883.75, gain: 2866.05, end: 26749.80 },
+            { day: 30, start: 26749.80, gain: 3209.98, end: 29959.78 }
+        ];
+
+        let completedDays = [];
+
+        // Update stats
+        function updateStats() {
+            const completed = completedDays.length;
+            const progress = (completed / 30) * 100;
+            
+            document.getElementById('progressText').textContent = `${completed}/30`;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            
+            // Update current target
+            const nextDay = completed + 1;
+            if (nextDay <= 30) {
+                const nextTarget = tradingData[nextDay - 1].end;
+                document.getElementById('currentTarget').textContent = `${nextTarget.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            } else {
+                document.getElementById('currentTarget').textContent = 'Complete!';
+            }
+        }
+
+        // Toggle day completion
+        function toggleDay(day) {
+            const index = completedDays.indexOf(day);
+            if (index > -1) {
+                completedDays.splice(index, 1);
+            } else {
+                completedDays.push(day);
+            }
+            renderTable();
+            updateStats();
+        }
+
+        // Render table
+        function renderTable() {
+            const tableBody = document.getElementById('tradingTable');
+            tableBody.innerHTML = '';
+            
+            tradingData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                const isMilestone = row.day % 5 === 0;
+                const isCompleted = completedDays.includes(row.day);
+                
+                if (isMilestone) tr.classList.add('milestone');
+                if (isCompleted) tr.classList.add('completed-row');
+                
+                tr.innerHTML = `
+                    <td class="checkbox-cell">
+                        <button class="checkpoint-btn ${isCompleted ? 'completed' : ''}" onclick="toggleDay(${row.day})">
+                            <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-circle'}"></i>
+                        </button>
+                    </td>
+                    <td class="day-number">${row.day}</td>
+                    <td class="amount">${row.start.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="gain">+${row.gain.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="amount">${row.end.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Initialize
+        renderTable();
+        updateStats();
+    </script>
+</body>
+</html>
