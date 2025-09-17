@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100-Day Trading Tracker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F0BB 0%, #C4DFAA 50%, #90C8AC 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(115, 169, 173, 0.3);
+            overflow: hidden;
+            border: 2px solid rgba(196, 223, 170, 0.5);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #73A9AD, #90C8AC);
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .table-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .table-header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #73A9AD;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #90C8AC;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(196, 223, 170, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(245, 240, 187, 0.2);
+        }
+
+        tr:hover {
+            background: rgba(196, 223, 170, 0.3);
+        }
+
+        .day-number {
+            font-weight: bold;
+            color: #73A9AD;
+            font-size: 1.1em;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #5a8a8e;
+        }
+
+        .gain {
+            color: #6b9c6f;
+            font-weight: 600;
+        }
+
+        .milestone {
+            background: rgba(245, 240, 187, 0.6) !important;
+            border-left: 4px solid #C4DFAA;
+        }
+
+        .milestone .day-number {
+            color: #8B6F47;
+            font-weight: bold;
+        }
+
+        .checkpoint {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .checkpoint-btn {
+            background: none;
+            border: none;
+            color: #73A9AD;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .checkpoint-btn:hover {
+            background: rgba(115, 169, 173, 0.2);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .checkpoint-btn.completed {
+            color: #6b9c6f;
+            opacity: 1;
+            background: rgba(107, 156, 111, 0.2);
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 40px;
+        }
+
+        .completed-row {
+            background: rgba(196, 223, 170, 0.4) !important;
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .completed-row .amount,
+        .completed-row .gain,
+        .completed-row .day-number {
+            color: #6b9c6f;
+        }
+
+        .stats-bar {
+            background: #73A9AD;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .progress-container {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #90C8AC, #C4DFAA);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            th, td {
+                padding: 4px 2px;
+                font-size: 0.8em;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="table-container">
+            <div class="table-header">
+                <h2><i class="fas fa-chart-line"></i> 100-Day Trading Plan</h2>
+                <p>3.47% Daily Growth Tracker - $1K to $30K</p>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Progress: <span class="stat-value" id="progressText">0/100</span></span>
+                </div>
+                <div class="progress-container">
+                    <div>Days Completed</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Current Target: <span class="stat-value" id="currentTarget">1,034.70</span></span>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-check"></i></th>
+                            <th><i class="fas fa-calendar-day"></i> Day</th>
+                            <th><i class="fas fa-dollar-sign"></i> Starting Amount</th>
+                            <th><i class="fas fa-arrow-up"></i> Daily Gain (3.47%)</th>
+                            <th><i class="fas fa-piggy-bank"></i> End Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradingTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Trading data - 100 days with 3.47% daily growth
+        const dailyGrowthRate = 0.0347;
+        const tradingData = [];
+        
+        // Generate 100 days of data
+        let currentAmount = 1000.00;
+        for (let day = 1; day <= 100; day++) {
+            const dailyGain = currentAmount * dailyGrowthRate;
+            const endBalance = currentAmount + dailyGain;
+            
+            tradingData.push({
+                day: day,
+                start: Math.round(currentAmount * 100) / 100,
+                gain: Math.round(dailyGain * 100) / 100,
+                end: Math.round(endBalance * 100) / 100
+            });
+            
+            currentAmount = endBalance;
+        }
+
+        let completedDays = [];
+
+        // Update stats
+        function updateStats() {
+            const completed = completedDays.length;
+            const progress = (completed / 100) * 100;
+            
+            document.getElementById('progressText').textContent = `${completed}/100`;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            
+            // Update current target
+            const nextDay = completed + 1;
+            if (nextDay <= 100) {
+                const nextTarget = tradingData[nextDay - 1].end;
+                document.getElementById('currentTarget').textContent = `${nextTarget.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            } else {
+                document.getElementById('currentTarget').textContent = 'Complete!';
+            }
+        }
+
+        // Toggle day completion with auto-complete previous days
+        function toggleDay(day) {
+            const index = completedDays.indexOf(day);
+            if (index > -1) {
+                // If unchecking, remove this day and all days after it
+                completedDays = completedDays.filter(d => d < day);
+            } else {
+                // If checking, add all days from 1 to this day
+                completedDays = [];
+                for (let i = 1; i <= day; i++) {
+                    completedDays.push(i);
+                }
+            }
+            renderTable();
+            updateStats();
+        }
+
+        // Render table
+        function renderTable() {
+            const tableBody = document.getElementById('tradingTable');
+            tableBody.innerHTML = '';
+            
+            tradingData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                const isMilestone = row.day % 10 === 0;
+                const isCompleted = completedDays.includes(row.day);
+                
+                if (isMilestone) tr.classList.add('milestone');
+                if (isCompleted) tr.classList.add('completed-row');
+                
+                tr.innerHTML = `
+                    <td class="checkbox-cell">
+                        <button class="checkpoint-btn ${isCompleted ? 'completed' : ''}" onclick="toggleDay(${row.day})">
+                            <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-circle'}"></i>
+                        </button>
+                    </td>
+                    <td class="day-number">${row.day}</td>
+                    <td class="amount">${row.start.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="gain">+${row.gain.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="amount">${row.end.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Initialize
+        renderTable();
+        updateStats();
+    </script>
+</body>
+</html>
